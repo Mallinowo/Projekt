@@ -2,5 +2,5 @@
 echo "hello";
 echo "WOJETK";
 echo "Michal";
-echo "Kuba";
+echo "BOZE KOLEJNY PROJEKT Z MICHALEM :^(";
 ?>
