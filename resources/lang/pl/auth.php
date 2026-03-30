@@ -1,0 +1,28 @@
+<?php
+
+return [
+    'login' => 'Zaloguj sie',
+    'logout' => 'Wyloguj',
+    'register' => 'Zarejestruj sie',
+    'email' => 'Email',
+    'password' => 'Haslo',
+    'password_confirm' => 'Powtorz haslo',
+    'username' => 'Nazwa',
+    'age' => 'Wiek',
+    'city' => 'Miasto',
+    'subculture' => 'Subkultura',
+    'choose' => 'wybierz',
+    'gender' => 'Plec',
+    'orientation' => 'Orientacja',
+    'gender_female' => 'Kobieta',
+    'gender_male' => 'Mezczyzna',
+    'gender_nonbinary' => 'Niebinarna',
+    'gender_other' => 'Inna',
+    'orientation_hetero' => 'Hetero',
+    'orientation_homo' => 'Homo',
+    'orientation_bi' => 'Bi / oba',
+    'orientation_other' => 'Inna',
+    'remember' => 'Zapamietaj mnie',
+    'no_account' => 'Nie masz konta?',
+    'failed' => 'Nieprawidlowy email lub haslo.',
+];
