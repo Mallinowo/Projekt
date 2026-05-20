@@ -35,7 +35,6 @@ class User extends Authenticatable
         'city_lng' => 'float',
     ];
 
-    // Relations
     public function photos(): HasMany
     {
         return $this->hasMany(Photo::class)->orderBy('order');
@@ -66,7 +65,6 @@ class User extends Authenticatable
         return UserMatch::where('user1_id', $this->id)->orWhere('user2_id', $this->id);
     }
 
-    // Helpers
     public function hasLiked(int $userId): bool
     {
         return $this->swipesMade()

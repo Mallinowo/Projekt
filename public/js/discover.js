@@ -1,5 +1,4 @@
-﻿// discover.js - Swipe logic + async API calls
-let queue = [...PROFILES];
+﻿let queue = [...PROFILES];
 let dragging = false, startX = 0, startY = 0, curCard = null;
 let matchedData = null;
 let matchPollInterval = null;
@@ -216,7 +215,6 @@ function startMatchPolling() {
     if (matchPollInterval) clearInterval(matchPollInterval);
     matchPollInterval = setInterval(pollMatchUpdates, 5000);
 }
-// ---- STACK BUILDING ----
 function buildStack() {
     const stack  = document.getElementById('stack');
     const actRow = document.getElementById('actRow');
@@ -225,8 +223,6 @@ function buildStack() {
     if(!queue.length) { showNoMore(); return; }
 
     const slice = queue.slice(0, 3);
-    // Insert from lowest depth (2) to highest (0).
-    // Each card is inserted before actRow, then z-index handles visual stacking.
     for(let i = slice.length - 1; i >= 0; i--) {
         const card = makeCard(slice[i], i);
         stack.insertBefore(card, actRow);
@@ -345,7 +341,6 @@ function applyCardEnterAnimation(card, depth = 0) {
     }, { once: true });
 }
 
-// ---- INFO PANEL ----
 function updateIP(p) {
     if(!p) {
         document.getElementById('ipName').textContent = '-';
@@ -390,14 +385,12 @@ function showNoMore() {
     const actRow = document.getElementById('actRow');
     const el     = document.createElement('div');
     el.className = 'no-more-enter absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center text-[#5e5880]';
-    el.innerHTML = `<div class="text-5xl mb-3">&#x1F5A4;</div>
-        <div class="font-cinzel text-sm text-[#9991bb]">${TRANS.no_more}</div>
+    el.innerHTML = `<div class="font-cinzel text-sm text-[#9991bb]">${TRANS.no_more}</div>
         <p class="text-xs mt-1">${TRANS.come_back}</p>`;
     stack.insertBefore(el, actRow);
     updateIP(null);
 }
 
-// ---- DRAG ----
 function bindDrag(card) {
     if(!card) return;
     if(card._ds) {
@@ -495,7 +488,6 @@ function pulseActionButton(dir) {
     button.classList.add('is-hit');
 }
 
-// ---- AFTER SWIPE ----
 async function recordSwipe(pid, dir) {
     const dirMap = {left:'dislike', right:'like', up:'superlike'};
     if(dir === 'left') showToast(TRANS.skipped);
@@ -529,18 +521,15 @@ function afterSwipe() {
     if(!allCards.length && !queue.length) { showNoMore(); return; }
     if(!allCards.length)                  { buildStack(); return; }
 
-    // Move all cards one level up (depth--).
     allCards.forEach(c => {
         const nd      = parseInt(c.dataset.depth) - 1;
         c.dataset.depth = nd;
         applyDepthStyle(c, nd, true);
     });
 
-    // Add a new card at stack bottom if there are still unseen profiles.
-    const newDepth = allCards.length; // after removing the top card
+    const newDepth = allCards.length;
     if(newDepth < 3 && queue.length > newDepth) {
         const nc        = makeCard(queue[newDepth], newDepth);
-        // Insert before the first DOM card (lowest z-index).
         const firstCard = stack.querySelector('.swipe-card');
         if(firstCard) stack.insertBefore(nc, firstCard);
         else          stack.insertBefore(nc, actRow);
@@ -550,7 +539,6 @@ function afterSwipe() {
     updateIP(queue[0] || null);
 }
 
-// ---- MATCH POPUP ----
 function showMatchPop(match) {
     matchedData = match || null;
     const popup = document.getElementById('matchPop');
@@ -588,7 +576,6 @@ function mpGoChat() {
     window.location.href = '/chat';
 }
 
-// ---- TOAST ----
 let _tt;
 function showToast(msg, type) {
     const t = document.getElementById('toast');
@@ -602,7 +589,6 @@ function showToast(msg, type) {
     _tt = setTimeout(() => { t.style.opacity = '0'; }, 2400);
 }
 
-// ---- KEYBOARD ----
 document.addEventListener('keydown', e => {
     if(e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
     if(e.key === 'ArrowLeft')  doSwipe('left');
@@ -610,7 +596,6 @@ document.addEventListener('keydown', e => {
     if(e.key === 'ArrowUp')    doSwipe('up');
 });
 
-// ---- INIT ----
 initKnownMatches();
 buildStack();
 startMatchPolling();

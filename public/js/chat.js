@@ -1,4 +1,3 @@
-// chat.js - async chat with emoji, GIF messages and reactions
 let activeMatchId = null;
 let pollInterval = null;
 let reactPickerBound = false;
@@ -56,7 +55,7 @@ function getChatItemByMatchId(matchId) {
 function getStoredMatchId() {
     try {
         return toInt(localStorage.getItem(LAST_CHAT_STORAGE_KEY));
-    } catch (e) {
+    } catch {
         return null;
     }
 }
@@ -64,8 +63,7 @@ function getStoredMatchId() {
 function saveStoredMatchId(matchId) {
     try {
         localStorage.setItem(LAST_CHAT_STORAGE_KEY, String(matchId));
-    } catch (e) {
-        // Ignore storage errors (private mode, quota, etc.)
+    } catch {
     }
 }
 
@@ -74,8 +72,7 @@ function syncMatchInUrl(matchId) {
         const url = new URL(window.location.href);
         url.searchParams.set('match', String(matchId));
         window.history.replaceState({}, '', `${url.pathname}${url.search}`);
-    } catch (e) {
-        // Ignore URL API errors.
+    } catch {
     }
 }
 

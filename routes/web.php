@@ -31,7 +31,6 @@ Route::middleware(['auth', 'locale'])->group(function () {
     Route::get('/spotify/top-artists', [SpotifyController::class, 'topArtists'])->name('spotify.top');
     Route::post('/spotify/disconnect', [SpotifyController::class, 'disconnect'])->name('spotify.disconnect');
 
-    // Needed by onboarding wizard to upload/delete profile photos.
     Route::post('/profile/photo', [ProfileController::class, 'uploadPhoto'])->name('profile.photo');
     Route::delete('/profile/photo/{photo}', [ProfileController::class, 'deletePhoto'])->name('profile.photo.delete');
 

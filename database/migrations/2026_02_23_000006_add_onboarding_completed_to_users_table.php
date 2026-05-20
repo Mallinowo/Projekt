@@ -13,7 +13,6 @@ return new class extends Migration
             $table->boolean('onboarding_completed')->default(false)->after('locale');
         });
 
-        // Existing accounts are treated as already onboarded.
         DB::table('users')->update(['onboarding_completed' => true]);
     }
 

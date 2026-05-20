@@ -88,7 +88,7 @@
                 </div>
             </div>
 
-            <div class="profile-card bg-[#111118] border border-[#2a2a3a] rounded-xl overflow-hidden">
+            <div id="match-preferences" class="profile-card bg-[#111118] border border-[#2a2a3a] rounded-xl overflow-hidden scroll-mt-6">
                 <div class="px-4 py-2.5 border-b border-[#2a2a3a] font-mono text-xs uppercase tracking-widest text-[#5e5880]">{{ __('profile.match_prefs') }}</div>
                 <div class="p-5">
                     <div class="grid grid-cols-2 gap-3 mb-4">

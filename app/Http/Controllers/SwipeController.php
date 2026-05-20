@@ -29,7 +29,6 @@ class SwipeController extends Controller
             return response()->json(['error' => 'Cannot swipe yourself'], 422);
         }
 
-        // Record swipe (or update existing one in rewind mode)
         Swipe::updateOrCreate(
             [
                 'swiper_id' => $user->id,
@@ -40,7 +39,6 @@ class SwipeController extends Controller
             ]
         );
 
-        // Invalidate cache so next discover load is fresh
         $cacheVersion = (int) Cache::get('discover_cache_version', 1);
         Cache::forget("discover_profiles_{$user->id}_v{$cacheVersion}");
 
@@ -50,14 +48,12 @@ class SwipeController extends Controller
             'direction' => $data['direction'],
         ]);
 
-        // Check for mutual like → create match
         $matched = false;
         $matchData = null;
 
         if (in_array($data['direction'], ['like', 'superlike'])) {
             $otherUser = User::find($swipedId);
             if ($otherUser && $otherUser->hasLiked($user->id)) {
-                // Both liked each other → match!
                 $existing = $user->getMatchWith($swipedId);
                 if (!$existing) {
                     $match = UserMatch::create([
@@ -71,7 +67,6 @@ class SwipeController extends Controller
                         'user2'    => $swipedId,
                     ]);
 
-                    // Send match notification emails (punkt 13)
                     try {
                         Mail::to($user->email)->send(new MatchMail($user, $otherUser));
                         Mail::to($otherUser->email)->send(new MatchMail($otherUser, $user));
@@ -87,7 +82,6 @@ class SwipeController extends Controller
                         'avatar'     => $otherUser->getAvatarUrl(),
                     ];
 
-                    // Match must disappear from discover for both users immediately.
                     Cache::forget("discover_profiles_{$swipedId}_v{$cacheVersion}");
                 }
             }

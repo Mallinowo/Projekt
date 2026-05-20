@@ -63,7 +63,6 @@ class ProfileController extends Controller
 
         $user->update($data);
 
-        // Sync interests
         if ($request->has('interests')) {
             $user->interests()->delete();
             foreach (array_slice((array)$request->interests, 0, 15) as $interest) {
@@ -71,7 +70,6 @@ class ProfileController extends Controller
             }
         }
 
-        // Sync artists
         if ($request->has('artists')) {
             $user->artists()->delete();
             foreach (array_slice((array)$request->artists, 0, 10) as $artist) {
@@ -79,7 +77,6 @@ class ProfileController extends Controller
             }
         }
 
-        // Invalidate discover/api caches using version bump (faster than global flush).
         Cache::add('discover_cache_version', 1);
         Cache::increment('discover_cache_version');
         Cache::add('api_cache_version', 1);
@@ -103,7 +100,6 @@ class ProfileController extends Controller
         $order = $user->photos()->max('order') + 1;
         $photo = $user->photos()->create(['path' => $path, 'order' => $order]);
 
-        // First photo also becomes avatar
         if ($user->photos()->count() === 1) {
             $user->update(['avatar' => $path]);
         }

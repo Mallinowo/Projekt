@@ -70,7 +70,6 @@ class AuthController extends Controller
         Auth::login($user);
         Log::info('New user registered', ['user_id' => $user->id, 'email' => $user->email]);
 
-        // Send welcome email (punkt 13 - mailing)
         try {
             Mail::to($user->email)->send(new WelcomeMail($user));
         } catch (\Exception $e) {

@@ -1,0 +1,75 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: altermatch_app
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - .:/var/www
+      - ./storage:/var/www/storage
+    environment:
+      - APP_ENV=production
+    depends_on:
+      - mysql
+      - redis
+    networks:
+      - altermatch
+
+  nginx:
+    image: nginx:alpine
+    container_name: altermatch_nginx
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    volumes:
+      - .:/var/www
+      - ./docker/nginx.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - app
+    networks:
+      - altermatch
+
+  # MySQL - baza danych (punkt 3)
+  mysql:
+    image: mysql:8.0
+    container_name: altermatch_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: altermatch
+      MYSQL_USER: altermatch
+      MYSQL_PASSWORD: secret
+      MYSQL_ROOT_PASSWORD: rootsecret
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - altermatch
+
+  # Redis - cache + sessions (punkt 4)
+  redis:
+    image: redis:alpine
+    container_name: altermatch_redis
+    restart: unless-stopped
+    networks:
+      - altermatch
+
+  # Mailpit - email testing (punkt 13)
+  mailpit:
+    image: axllent/mailpit
+    container_name: altermatch_mailpit
+    restart: unless-stopped
+    ports:
+      - "8025:8025"
+      - "1025:1025"
+    networks:
+      - altermatch
+
+volumes:
+  mysql_data:
+
+networks:
+  altermatch:
+    driver: bridge

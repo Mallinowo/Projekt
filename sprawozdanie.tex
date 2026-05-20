@@ -1,0 +1,663 @@
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[polish]{babel}
+\usepackage{lmodern}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{caption}
+\usepackage{graphicx}
+\usepackage{float}
+
+\geometry{margin=2.5cm}
+\setlist[itemize]{leftmargin=1.25cm}
+\setlist[enumerate]{leftmargin=1.25cm}
+\renewcommand{\arraystretch}{1.25}
+
+\definecolor{codegray}{rgb}{0.95,0.95,0.95}
+\definecolor{codeblue}{rgb}{0.0,0.35,0.75}
+
+\lstset{
+    backgroundcolor=\color{codegray},
+    basicstyle=\ttfamily\small,
+    keywordstyle=\color{codeblue}\bfseries,
+    frame=single,
+    breaklines=true,
+    breakatwhitespace=true,
+    tabsize=4,
+    showstringspaces=false,
+    language=PHP
+}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=black,
+    urlcolor=codeblue,
+    pdftitle={Sprawozdanie z pracy projektowej -- Altermatch},
+    pdfauthor={Zespół projektowy}
+}
+\sloppy
+
+% -------------------------------------------------------
+% Uzupełnij dane zespołu
+% -------------------------------------------------------
+\newcommand{\autorA}{Jakub Maliński}
+\newcommand{\albumA}{45891}
+\newcommand{\autorB}{Michał Kuchar}
+\newcommand{\albumB}{44924}
+\newcommand{\autorC}{Wojciech Kasprzyk}
+\newcommand{\albumC}{44918}
+\newcommand{\grupaStudentow}{Collegium Witelona, Legnica}
+\newcommand{\linkRepo}{https://github.com/Mallinowo/Projekt}
+% -------------------------------------------------------
+
+\title{
+    \textbf{Sprawozdanie z pracy projektowej}\\[0.5cm]
+    \LARGE\textbf{Altermatch}\\[0.3cm]
+    \large Aplikacja randkowa dla alternatywnych subkultur
+}
+\author{
+    \begin{tabular}{ll}
+        \autorA & (nr albumu: \albumA) \\
+        \autorB & (nr albumu: \albumB) \\
+        \autorC & (nr albumu: \albumC) \\
+    \end{tabular}\\[0.4cm]
+    Grupa: \grupaStudentow
+}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+\thispagestyle{empty}
+
+\begin{center}
+    \vspace{0.8cm}
+    \textbf{Temat projektu:} aplikacja randkowa dla użytkowników związanych z alternatywnymi subkulturami.\\[0.3cm]
+    \textbf{Przedmiot:} Programowanie i Projektowanie Systemów Informatycznych 1\\[0.3cm]
+    \textbf{Repozytorium:} \url{\linkRepo}
+\end{center}
+
+\newpage
+\tableofcontents
+\newpage
+
+% =======================================================
+\section{Wstęp}
+% =======================================================
+
+Niniejsze sprawozdanie opisuje projekt \textbf{Altermatch} -- aplikację internetową inspirowaną serwisami randkowymi, w szczególności mechaniką kart i dopasowań rozsławioną przez Tindera. Aplikacja jest przeznaczona dla osób identyfikujących się z alternatywnymi subkulturami: \textit{emo, goth, scene, punk} i \textit{metalhead}.
+
+Celem projektu było stworzenie kompletnej, działającej aplikacji webowej pokrywającej wszystkie 20 zagadnień kwalifikacyjnych: od architektury MVC, przez bazy danych, cache, uwierzytelnianie, lokalizację, mailing, asynchroniczne interakcje, konsumpcję i publikację API, aż po wdrożenie w kontenerach Docker.
+
+System został zrealizowany jako monolityczna aplikacja pełnostackowa. Backend oparto na \textbf{PHP 8.2} i \textbf{Laravel 11}, frontend na szablonach \textbf{Blade}, \textbf{Tailwind CSS} i \textbf{Vanilla JavaScript}, a środowisko uruchomieniowe opisano przy pomocy \textbf{Docker Compose}. Dane przechowuje \textbf{MySQL 8}, a cache i sesje obsługuje \textbf{Redis}.
+
+% =======================================================
+\section{Opis funkcjonalny systemu}
+% =======================================================
+
+\subsection{Charakterystyka ogólna}
+
+Altermatch umożliwia użytkownikom tworzenie profili, przeglądanie kart kandydatów, wyrażanie zainteresowania (like / superlike) lub jego braku (pomiń), a po wzajemnym dopasowaniu -- prowadzenie rozmowy w zintegrowanym czacie. System posiada jedną rolę biznesową: zalogowanego użytkownika z ukończonym onboardingiem.
+
+Główny przepływ biznesowy:
+\begin{enumerate}
+    \item Użytkownik rejestruje konto z wyborem subkultury, płci i orientacji.
+    \item Po rejestracji aplikacja automatycznie geokoduje podane miasto (Open-Meteo Geocoding API) i zapisuje współrzędne potrzebne do filtrowania odległości.
+    \item Jednorazowy onboarding zbiera minimum wymaganych danych: zdjęcie profilowe, opis, zainteresowania (min. 5) i opcjonalnie ulubionych artystów.
+    \item Moduł \textit{Odkrywaj} wyświetla kandydatów dopasowanych do preferencji użytkownika.
+    \item Każda akcja swipe jest wysyłana asynchronicznie do backendu i zapisywana w bazie.
+    \item Gdy oboje użytkownicy wykonali akcję like/superlike wobec siebie, tworzony jest match i wysyłane powiadomienia e-mail.
+    \item Dopasowane pary mogą rozmawiać w module czatu -- tekstowo, GIF-ami i reakcjami emoji.
+\end{enumerate}
+
+\subsection{Rejestracja i logowanie}
+
+Moduł autoryzacji obejmuje:
+\begin{itemize}
+    \item formularz rejestracji z walidacją: nazwa, e-mail, hasło (min. 8 znaków), wiek (18+), miasto, płeć, orientacja seksualna, subkultura,
+    \item automatyczne logowanie po rejestracji i przekierowanie do onboardingu,
+    \item formularz logowania z obsługą sesji i opcją \textit{pamiętaj mnie},
+    \item wylogowanie: unieważnienie sesji i regeneracja tokenu CSRF,
+    \item przełącznik języka interfejsu (PL/EN) -- dostępny bez logowania.
+\end{itemize}
+
+Hasła są hashowane przez wbudowany cast modelu Laravel. Formularze są chronione tokenami CSRF generowanymi przez framework.
+
+\subsection{Onboarding użytkownika}
+
+Onboarding jest wymuszony po pierwszej rejestracji -- użytkownik nie ma dostępu do modułu odkrywania dopóki nie uzupełni profilu. Wymagania:
+\begin{itemize}
+    \item dodanie co najmniej jednego zdjęcia profilowego,
+    \item wpisanie opisu profilu (bio),
+    \item podanie minimum 5 zainteresowań,
+    \item opcjonalne dodanie ulubionych artystów -- ręcznie lub przez Spotify,
+    \item potwierdzenie płci i orientacji.
+\end{itemize}
+
+Po zakończeniu onboardingu konto otrzymuje flagę \texttt{onboarding\_completed = true}. Middleware w trasach sprawdza tę flagę przy każdym żądaniu do chronionych widoków.
+
+\subsection{Moduł Odkrywaj}
+
+Moduł \texttt{/discover} to centralny ekran aplikacji. Użytkownik widzi stos kart kandydatów. Dostępne akcje:
+\begin{itemize}
+    \item \textbf{Pomiń (❌)} -- odrzucenie profilu,
+    \item \textbf{Like (💚)} -- wyrażenie zainteresowania,
+    \item \textbf{Super (⭐)} -- wyróżnione zainteresowanie.
+\end{itemize}
+
+Karty obsługuje się przyciskami lub gestem przeciągania (drag). Każda akcja trafia asynchronicznie do \texttt{POST /swipe}. Backend sprawdza, czy druga osoba wcześniej polubiła użytkownika -- jeśli tak, tworzy match.
+
+Kandydaci są filtrowani według preferencji aktywnego użytkownika:
+\begin{itemize}
+    \item zakres wieku (min–max),
+    \item preferowane subkultury (wielokrotny wybór, JSON w kolumnie bazy),
+    \item maksymalna odległość w km (Haversine na podstawie \texttt{city\_lat/city\_lng}),
+    \item zgodność płci i orientacji (np. orientacja heteroseksualna \textrightarrow\ pokazuj osoby płci przeciwnej),
+    \item wykluczenie profili już przesuniętych i już dopasowanych.
+\end{itemize}
+
+Lista kandydatów jest cachowana w Redis -- invalidacja następuje po zmianie profilu lub wykonaniu swipe'a.
+
+\subsection{Dopasowania}
+
+Match powstaje po wzajemnym polubieniu. Po jego utworzeniu:
+\begin{itemize}
+    \item rekord trafia do tabeli \texttt{matches},
+    \item interfejs natychmiast pokazuje popup z informacją o nowym dopasowaniu,
+    \item obie strony dostają e-mail z powiadomieniem (Laravel Mail),
+    \item dopasowane osoby uzyskują dostęp do wspólnego czatu.
+\end{itemize}
+
+Polling \texttt{GET /discover/matches/updates} sprawdza co kilka sekund nowe dopasowania i aktualizuje listę w sidebarze.
+
+\subsection{Czat}
+
+Moduł \texttt{/chat} umożliwia komunikację wyłącznie między osobami ze wspólnym matchem. Funkcje:
+\begin{itemize}
+    \item lista dopasowań w panelu bocznym z podglądem ostatniej wiadomości,
+    \item historia wiadomości z paginacją,
+    \item wysyłanie wiadomości tekstowych,
+    \item wyszukiwanie i wysyłanie GIF-ów (Tenor v2 / GIPHY z automatycznym fallbackiem),
+    \item dodawanie reakcji emoji (kliknięcie wiadomości),
+    \item oznaczanie wiadomości jako przeczytane przy otwarciu rozmowy,
+    \item polling co 3 sekundy -- nowe wiadomości pojawiają się bez przeładowania strony.
+\end{itemize}
+
+Backend weryfikuje, że zalogowany użytkownik jest uczestnikiem danego matcha przed zwróceniem jakichkolwiek danych rozmowy.
+
+\subsection{Profil użytkownika}
+
+Moduł profilu pozwala edytować wszystkie dane:
+\begin{itemize}
+    \item dane podstawowe: nazwa, wiek, miasto, bio,
+    \item subkultura, płeć, orientacja,
+    \item zdjęcie profilowe i galeria (do 6 zdjęć, upload przez AJAX),
+    \item zainteresowania (5--15),
+    \item ulubieni artyści (0--10), z opcją synchronizacji ze Spotify,
+    \item preferencje odkrywania: zakres wieku, maksymalny dystans, preferowane subkultury.
+\end{itemize}
+
+Zmiana danych wpływających na kandydatów (wiek, lokalizacja, subkultura, orientacja) powoduje automatyczne unieważnienie cache discover i publicznego API.
+
+\subsection{Integracja ze Spotify}
+
+Spotify jest opcjonalną integracją -- aplikacja działa w pełni bez niej. Obsługiwany przepływ:
+\begin{enumerate}
+    \item Użytkownik klika \textit{Połącz z Spotify} w profilu.
+    \item Backend przekierowuje na OAuth2 Spotify z scope \texttt{user-top-read}.
+    \item Po autoryzacji Spotify wraca na \texttt{/spotify/callback} z kodem.
+    \item Backend wymienia kod na token, zapisuje go i oferuje listę ulubionych artystów.
+    \item Użytkownik może jednym kliknięciem dodać artystów do profilu.
+\end{enumerate}
+
+\subsection{Lokalizacja językowa}
+
+Aplikacja obsługuje dwa języki: polski (domyślny) i angielski. Tłumaczenia znajdują się w \texttt{resources/lang/pl} i \texttt{resources/lang/en}. Wybór języka zapisywany jest w sesji oraz w kolumnie \texttt{locale} użytkownika w bazie danych. Przełącznik działa również dla niezalogowanych gości.
+
+\subsection{Publiczne REST API}
+
+Projekt publikuje API w prefiksie \texttt{/api/v1}:
+\begin{itemize}
+    \item \texttt{GET /api/v1/profiles} -- paginowana lista profili (cacheowana),
+    \item \texttt{GET /api/v1/profiles/\{id\}} -- szczegóły profilu po ID,
+    \item \texttt{GET /api/v1/subcultures} -- słownik subkultur z ikonami.
+\end{itemize}
+
+Endpointy są publiczne (nie wymagają tokenu) i odpowiadają JSON-em.
+
+% =======================================================
+\section{Opis technologiczny}
+% =======================================================
+
+\subsection{Architektura aplikacji}
+
+System jest monolityczną aplikacją MVC opartą na konwencjach Laravel. Warstwy:
+
+\begin{itemize}
+    \item \textbf{Model} -- klasy Eloquent: \texttt{User}, \texttt{Photo}, \texttt{Interest}, \texttt{Artist}, \texttt{Swipe}, \texttt{UserMatch}, \texttt{Message}, \texttt{MessageReaction},
+    \item \textbf{View} -- szablony Blade renderowane po stronie serwera,
+    \item \textbf{Controller} -- klasy obsługujące żądania HTTP; logika biznesowa jest częściowo wydzielona do klas \textbf{Service},
+    \item \textbf{Service} -- \texttt{SpotifyService}, \texttt{GifService}, \texttt{CityLocationService} -- integracje z zewnętrznymi API.
+\end{itemize}
+
+Uproszczony diagram przepływu żądania:
+
+\begin{center}
+\begin{verbatim}
+Browser → Nginx → PHP-FPM/Laravel
+  │
+  ├── Middleware: auth, onboarding_completed, locale
+  ├── Router: web.php / api.php
+  ├── Controller → Model (Eloquent) → MySQL
+  │              → Cache (Redis)
+  │              → Service (Spotify / GIF / Geocoding)
+  └── View: Blade template → HTML → Browser
+\end{verbatim}
+\end{center}
+
+\subsection{Backend}
+
+Backend działa na \textbf{PHP 8.2} z \textbf{Laravel 11}. Najważniejsze kontrolery:
+
+\begin{itemize}
+    \item \texttt{AuthController} -- rejestracja, logowanie, wylogowanie, geokodowanie miasta, zmiana locale,
+    \item \texttt{OnboardingController} -- walidacja i zapis danych onboardingu, upload zdjęcia,
+    \item \texttt{DiscoverController} -- zapytanie do bazy z wielowarstwowym filtrowaniem, obsługa cache, lista nowych dopasowań (polling),
+    \item \texttt{SwipeController} -- atomowy zapis swipe'a, detekcja wzajemnego lajku, tworzenie matcha, wysyłka maili,
+    \item \texttt{ChatController} -- wczytanie wiadomości, wysyłka, wyszukiwanie GIF-ów, zapis reakcji, oznaczanie przeczytanych,
+    \item \texttt{ProfileController} -- edycja danych profilu, upload do 6 zdjęć (Intervention Image), unieważnienie cache,
+    \item \texttt{SpotifyController} -- OAuth2 flow, search artystów, pobieranie top artists, odłączenie konta,
+    \item \texttt{ApiController} -- publiczne REST API z paginacją i cache.
+\end{itemize}
+
+Walidacja danych wejściowych opiera się na mechanizmie Laravel Request Validation. Każdy kontroler zwraca albo widok Blade, albo odpowiedź JSON.
+
+\subsection{Baza danych}
+
+Warstwa danych korzysta z \textbf{MySQL 8}. Struktura jest zarządzana przez migracje Laravel. Główne tabele:
+
+\begin{longtable}{|p{3.8cm}|p{9.4cm}|}
+\hline
+\textbf{Tabela} & \textbf{Zawartość} \\
+\hline
+\texttt{users} & Dane konta, profilu, geolokalizacja, preferencje odkrywania, locale, flaga onboardingu \\
+\hline
+\texttt{photos} & Zdjęcia użytkownika z kolejnością wyświetlania \\
+\hline
+\texttt{interests} & Zainteresowania użytkownika (relacja 1:N do \texttt{users}) \\
+\hline
+\texttt{artists} & Ulubieni artyści, opcjonalnie powiązani ze Spotify \\
+\hline
+\texttt{swipes} & Historia decyzji: kto, kogo, jaką akcją (like/dislike/superlike) \\
+\hline
+\texttt{matches} & Pary wzajemnie dopasowanych użytkowników \\
+\hline
+\texttt{messages} & Wiadomości czatu: typ (text/gif), treść, gif\_url, read\_at \\
+\hline
+\texttt{message\_reactions} & Reakcje emoji na wiadomości \\
+\hline
+\end{longtable}
+
+Relacje Eloquent:
+\begin{itemize}
+    \item \texttt{User} \textrightarrow\ \texttt{hasMany} Photo, Interest, Artist, Swipe,
+    \item \texttt{User} \textrightarrow\ \texttt{belongsToMany} User (przez \texttt{matches}),
+    \item \texttt{UserMatch} \textrightarrow\ \texttt{hasMany} Message,
+    \item \texttt{Message} \textrightarrow\ \texttt{hasMany} MessageReaction.
+\end{itemize}
+
+\subsection{Cache i sesje}
+
+Projekt używa \textbf{Redis} (przez bibliotekę Predis) jako backendu zarówno dla cache aplikacji, jak i dla sesji. Strategie cache:
+
+\begin{itemize}
+    \item \textbf{Lista kandydatów discover} -- klucz zależny od ID użytkownika i wersji cache; wersja jest inkrementowana po każdym swipe'ie lub zmianie profilu,
+    \item \textbf{Endpointy API} -- wyniki \texttt{/api/v1/profiles} i \texttt{/api/v1/subcultures} cachowane przez 10 minut,
+    \item \textbf{Token Spotify client credentials} -- cache na czas ważności tokenu,
+    \item \textbf{Wyniki wyszukiwania GIF-ów} -- cache na 5 minut (zmniejsza liczbę zapytań do Tenor/GIPHY),
+    \item \textbf{Wyniki geokodowania} -- cache bezterminowy (miasto do współrzędnych zmienia się rzadko).
+\end{itemize}
+
+\subsection{Frontend}
+
+Warstwa widoku:
+\begin{itemize}
+    \item \textbf{Blade} -- szablony HTML renderowane po stronie serwera; layouty \texttt{app} (zalogowani) i \texttt{auth} (gość),
+    \item \textbf{Tailwind CSS} -- framework utility-first; responsywność przez klasy \texttt{sm:}, \texttt{md:}, \texttt{lg:},
+    \item \textbf{Vite} -- bundler zasobów frontendowych (CSS, JS), hot reload w trybie dev,
+    \item \textbf{Vanilla JavaScript} -- bez zewnętrznych frameworków JS.
+\end{itemize}
+
+Kluczowe skrypty JavaScript:
+\begin{itemize}
+    \item \textbf{public/js/discover.js} -- animacje kart (drag + CSS transform), obsługa przycisków swipe, popup nowego matcha, polling listy dopasowań co 5 sekund,
+    \item \textbf{public/js/chat.js} -- otwieranie rozmów przez Fetch API, wysyłanie wiadomości, wyszukiwanie GIF-ów, zapis reakcji emoji, polling co 3 sekundy.
+\end{itemize}
+
+\subsection{Integracje zewnętrzne}
+
+\begin{longtable}{|p{3.5cm}|p{9.7cm}|}
+\hline
+\textbf{Serwis} & \textbf{Sposób użycia} \\
+\hline
+\textbf{Spotify API} & OAuth2 (authorization code flow), endpoint \texttt{/v1/search}, \texttt{/v1/me/top/artists}. Token client credentials cachowany w Redis. \\
+\hline
+\textbf{Tenor v2 API} & Wyszukiwanie GIF-ów w czacie; fallback na Tenor v1 i GIPHY. Wyniki cachowane. \\
+\hline
+\textbf{GIPHY API} & Fallback jeśli Tenor jest niedostępny lub bez klucza. \\
+\hline
+\textbf{Open-Meteo Geocoding} & Zamiana nazwy miasta na \texttt{latitude/longitude} przy rejestracji. Wyniki cachowane. \\
+\hline
+\end{longtable}
+
+Wszystkie integracje są opakowane blokami \texttt{try/catch}. Błędy są logowane przez Laravel Log -- aplikacja nie przerywa działania gdy zewnętrzne API jest niedostępne.
+
+\subsection{Mailing}
+
+Laravel Mail z driverem SMTP. W środowisku deweloperskim wiadomości przechwytuje \textbf{Mailpit} (port 8025). Wysyłane wiadomości:
+\begin{itemize}
+    \item \textbf{Welcome} -- po zakończeniu rejestracji,
+    \item \textbf{Match} -- gdy dwoje użytkowników wzajemnie się polubilo; wysyłany do obojga.
+\end{itemize}
+
+Widoki e-maili są szablonami Blade w katalogu \texttt{resources/views/emails}.
+
+\subsection{Logowanie zdarzeń}
+
+Laravel Log (Monolog) zapisuje zdarzenia do pliku \texttt{storage/logs/laravel.log}. Logowane są m.in.:
+\begin{itemize}
+    \item rejestracja nowego użytkownika (ID, e-mail),
+    \item błędy geokodowania miasta,
+    \item tworzenie matcha,
+    \item błędy wysyłki poczty,
+    \item błędy integracji Spotify i GIF API.
+\end{itemize}
+
+\subsection{Konteneryzacja i wdrożenie}
+
+Środowisko opisano w \texttt{docker-compose.yml}. Usługi:
+
+\begin{longtable}{|p{2.5cm}|p{4.0cm}|p{6.7cm}|}
+\hline
+\textbf{Usługa} & \textbf{Technologia} & \textbf{Rola} \\
+\hline
+\texttt{app} & PHP 8.2-FPM, Composer, Node.js & Aplikacja Laravel, kompilacja assetów \\
+\hline
+\texttt{nginx} & Nginx & Serwer HTTP, routing, przyjazne URL \\
+\hline
+\texttt{mysql} & MySQL 8 & Relacyjna baza danych \\
+\hline
+\texttt{redis} & Redis 7 & Cache, sesje \\
+\hline
+\texttt{mailpit} & Mailpit & Lokalne przechwytywanie e-maili (dev) \\
+\hline
+\end{longtable}
+
+Dockerfile instaluje zależności PHP (Composer) i Node.js (npm), buduje assety frontendowe przez Vite, ustawia uprawnienia katalogów \texttt{storage} i \texttt{bootstrap/cache}.
+
+% =======================================================
+\section{Wyszczególnione wdrożone zagadnienia kwalifikacyjne}
+% =======================================================
+
+\begin{longtable}{|>{\centering\arraybackslash}p{0.7cm}|p{3.4cm}|p{8.0cm}|p{1.6cm}|}
+\hline
+\textbf{\#} & \textbf{Zagadnienie} & \textbf{Realizacja w projekcie} & \textbf{Status} \\
+\hline
+1 & Framework MVC & Laravel 11 -- kontrolery, modele Eloquent i widoki Blade. Podział na warstwy Model, View, Controller i Service jest konsekwentnie zachowany. & Wdrożone \\
+\hline
+2 & Framework CSS & Tailwind CSS z konfiguracją Vite i PostCSS. Responsywne klasy \texttt{sm:}, \texttt{md:}, \texttt{lg:} w widokach. & Wdrożone \\
+\hline
+3 & Baza danych & MySQL 8. Struktura zarządzana przez migracje. Seedery tworzą konta demo i dane testowe. & Wdrożone \\
+\hline
+4 & Cache & Redis przez Laravel Cache i bibliotekę Predis. Cachowane są m.in.: lista discover, endpointy API, tokeny Spotify, wyniki GIF, geokodowanie. & Wdrożone \\
+\hline
+5 & Dependency manager & Composer dla PHP (Laravel, Sanctum, Predis, Intervention Image). npm + Vite dla zasobów frontendowych (Tailwind, Alpine). & Wdrożone \\
+\hline
+6 & HTML & Semantyczne szablony Blade: layouty, widoki auth, onboarding, discover, chat, profile, e-maile. & Wdrożone \\
+\hline
+7 & CSS & Tailwind CSS oraz własne style komponentów, animacji kart i modalu matcha. & Wdrożone \\
+\hline
+8 & JavaScript & Vanilla JS: animacje drag-to-swipe, Fetch API dla akcji swipe/chat/upload, polling, dynamiczny UI, GIF-y, reakcje emoji. & Wdrożone \\
+\hline
+9 & Routing & Laravel Router -- grupy middleware, named routes, zasoby RESTful. Nginx obsługuje przyjazne URL (pretty URLs) i przekazuje żądania do PHP-FPM. & Wdrożone \\
+\hline
+10 & ORM & Eloquent ORM -- modele, relacje (\texttt{hasMany}, \texttt{belongsTo}, \texttt{belongsToMany}), eager loading, scopy zapytań. & Wdrożone \\
+\hline
+11 & Uwierzytelnianie & Rejestracja i logowanie przez Laravel Auth. Sesje chronione przez middleware \texttt{auth}. Sanctum przygotowany dla API tokenowego. CSRF na wszystkich formularzach. & Wdrożone \\
+\hline
+12 & Lokalizacja & Laravel i18n -- pliki tłumaczeń PL/EN w \texttt{resources/lang}. Middleware locale ustawia język na podstawie sesji lub kolumny \texttt{locale} użytkownika. & Wdrożone \\
+\hline
+13 & Mailing & Laravel Mail -- Mailable \textit{Welcome} i \textit{Match}. Widoki e-maili w Blade. W środowisku deweloperskim Mailpit przechwytuje wiadomości pod \texttt{localhost:8025}. & Wdrożone \\
+\hline
+14 & Formularze & Formularze Blade z tokenem CSRF, walidacja serwerowa przez Laravel Request Validation, zwrotne komunikaty błędów przy polach. & Wdrożone \\
+\hline
+15 & Asynchroniczność & Fetch API -- akcje swipe, wysyłanie i odbieranie wiadomości, upload zdjęć, wyszukiwanie GIF-ów. Polling discover i czatu -- aktualizacja UI bez przeładowania strony. & Wdrożone \\
+\hline
+16 & Konsumpcja API & Spotify API (OAuth2, artyści), Tenor v2/GIPHY (GIF-y), Open-Meteo Geocoding (geolokalizacja miast). Klient HTTP: Laravel Http/Guzzle. & Wdrożone \\
+\hline
+17 & Publikacja API & REST API \texttt{/api/v1/profiles} (lista + paginacja), \texttt{/api/v1/profiles/\{id\}}, \texttt{/api/v1/subcultures}. Odpowiedzi JSON, cachowane w Redis. & Wdrożone \\
+\hline
+18 & RWD & Responsywne klasy Tailwind. Interfejs dostosowany do różnych szerokości: mobile (pojedyncza kolumna), tablet i desktop (sidebar + główna treść). & Wdrożone \\
+\hline
+19 & Logger & Laravel Log (Monolog) -- rejestracja zdarzeń aplikacji: rejestracja użytkownika, tworzenie matcha, błędy API, błędy maili, zdarzenia Spotify. & Wdrożone \\
+\hline
+20 & Deployment & Dockerfile (PHP-FPM, Composer, Node.js, Vite). Docker Compose z usługami: \texttt{app}, \texttt{nginx}, \texttt{mysql}, \texttt{redis}, \texttt{mailpit}. & Wdrożone \\
+\hline
+\caption{Zestawienie 20 zagadnień kwalifikacyjnych}
+\end{longtable}
+
+Wszystkie 20 zagadnień kwalifikacyjnych zostało zrealizowanych, co kwalifikuje projekt do oceny \textbf{5.0} według skali opisanej w wymaganiach.
+
+% =======================================================
+\section{Instrukcja lokalnego i zdalnego uruchomienia}
+% =======================================================
+
+\subsection{Wymagania lokalne}
+
+\begin{itemize}
+    \item Docker (wersja 24+),
+    \item Docker Compose (wbudowany w Docker Desktop lub jako plugin),
+    \item wolne porty: \texttt{8080} (aplikacja), \texttt{8025} (Mailpit), \texttt{3307} (MySQL),
+    \item połączenie z internetem przy pierwszym budowaniu obrazu.
+\end{itemize}
+
+\subsection{Uruchomienie lokalne}
+
+\begin{enumerate}
+
+    \item Sklonować repozytorium:
+\begin{lstlisting}[language=bash]
+git clone <adres_repozytorium>
+cd altermatch
+\end{lstlisting}
+
+    \item Przygotować plik środowiskowy:
+\begin{lstlisting}[language=bash]
+cp .env.example .env
+\end{lstlisting}
+
+    \item Zbudować i uruchomić kontenery:
+\begin{lstlisting}[language=bash]
+docker compose up -d --build
+\end{lstlisting}
+
+    \item Wygenerować klucz aplikacji:
+\begin{lstlisting}[language=bash]
+docker compose exec app php artisan key:generate
+\end{lstlisting}
+
+    \item Uruchomić migracje i seedery (tworzy konta demo):
+\begin{lstlisting}[language=bash]
+docker compose exec app php artisan migrate --seed
+\end{lstlisting}
+
+    \item Utworzyć symlink do plików publicznych w \texttt{storage}:
+\begin{lstlisting}[language=bash]
+docker compose exec app php artisan storage:link
+\end{lstlisting}
+
+\end{enumerate}
+
+\subsection{Adresy lokalnych usług}
+
+\begin{itemize}
+    \item Aplikacja: \url{http://localhost:8080}
+    \item Mailpit (podgląd e-maili): \url{http://localhost:8025}
+    \item MySQL: \texttt{localhost:3307} (dane w \texttt{.env})
+\end{itemize}
+
+\subsection{Konta demonstracyjne}
+
+Hasło dla wszystkich kont demo: \texttt{demo123}.
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+\textbf{E-mail} & \textbf{Imię} & \textbf{Subkultura} \\
+\midrule
+\texttt{moon@demo.pl} & Klaudia & emo \\
+\texttt{void@demo.pl} & Krystian & goth \\
+\texttt{goth@demo.pl} & Julka & scene \\
+\texttt{rain@demo.pl} & Oliwier & punk \\
+\texttt{crypt@demo.pl} & Luciusz & metalhead \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Kluczowe zmienne środowiskowe}
+
+\begin{longtable}{|p{5.5cm}|p{7.7cm}|}
+\hline
+\textbf{Zmienna} & \textbf{Opis} \\
+\hline
+\texttt{APP\_URL} & Adres aplikacji; \texttt{http://localhost:8080} lokalnie \\
+\hline
+\texttt{DB\_HOST}, \texttt{DB\_DATABASE} & Adres i nazwa bazy MySQL \\
+\hline
+\texttt{CACHE\_STORE=redis} & Backend cache aplikacji \\
+\hline
+\texttt{SESSION\_DRIVER=redis} & Backend sesji \\
+\hline
+\texttt{MAIL\_HOST=mailpit} & Serwer pocztowy (dev) \\
+\hline
+\texttt{TENOR\_API\_KEY} & Klucz API Tenor (opcjonalny) \\
+\hline
+\texttt{GIPHY\_API\_KEY} & Klucz API GIPHY (opcjonalny) \\
+\hline
+\texttt{SPOTIFY\_CLIENT\_ID} & Spotify OAuth2 Client ID (opcjonalny) \\
+\hline
+\texttt{SPOTIFY\_CLIENT\_SECRET} & Spotify OAuth2 Secret (opcjonalny) \\
+\hline
+\texttt{SPOTIFY\_REDIRECT\_URI} & Spotify callback URI (opcjonalny) \\
+\hline
+\end{longtable}
+
+Klucze API Spotify, Tenor i GIPHY są opcjonalne -- aplikacja działa bez nich; wyłączone są tylko odpowiednie funkcje.
+
+\subsection{Uruchomienie zdalne (VPS)}
+
+Wdrożenie produkcyjne na serwerze Linux z Dockerem:
+\begin{enumerate}
+    \item Zainstalować Docker i Docker Compose.
+    \item Skonfigurować DNS domeny na IP serwera.
+    \item Sklonować repozytorium na serwer.
+    \item Przygotować plik \texttt{.env} z ustawieniami produkcyjnymi:
+    \begin{itemize}
+        \item \texttt{APP\_ENV=production}, \texttt{APP\_DEBUG=false},
+        \item wygenerowany \texttt{APP\_KEY},
+        \item silne hasło bazy MySQL,
+        \item prawidłowy \texttt{APP\_URL} z domeną.
+    \end{itemize}
+    \item Uruchomić kontenery: \texttt{docker compose up -d --build}
+    \item Wykonać migracje: \texttt{docker compose exec app php artisan migrate --force}
+    \item Utworzyć symlink: \texttt{docker compose exec app php artisan storage:link}
+    \item Skonfigurować reverse proxy (Nginx/Caddy) i certyfikat HTTPS (Let's Encrypt).
+    \item Przygotować backup bazy MySQL i katalogu \texttt{storage/app/public}.
+\end{enumerate}
+
+\subsection{Generowanie PDF ze sprawozdania}
+
+\begin{lstlisting}[language=bash]
+pdflatex sprawozdanie.tex
+pdflatex sprawozdanie.tex   # drugi przebieg: spis tresci i odnosniki
+\end{lstlisting}
+
+Wymagane: TeX Live lub MiKTeX.
+
+% =======================================================
+\section{Podział pracy w zespole}
+% =======================================================
+
+% Uzupełnij rzeczywisty podział pracy
+\begin{longtable}{|p{4.5cm}|p{8.7cm}|}
+\hline
+\textbf{Członek zespołu} & \textbf{Zakres odpowiedzialności} \\
+\hline
+\autorA & TODO -- np. Backend: modele, migracje, kontrolery DiscoverController i SwipeController, logika filtrowania i cache \\
+\hline
+\autorB & TODO -- np. Frontend: widoki Blade, Tailwind CSS, JavaScript (discover.js, chat.js), RWD \\
+\hline
+\autorC & TODO -- np. Integracje: Spotify, Tenor/GIPHY, geokodowanie, Docker, mailing, REST API \\
+\hline
+\end{longtable}
+
+% =======================================================
+\section{Wnioski projektowe}
+% =======================================================
+
+\subsection{Podsumowanie realizacji}
+
+Projekt Altermatch zrealizowano jako kompletną aplikację webową pokrywającą wszystkie 20 zagadnień kwalifikacyjnych. System przeszedł przez pełen cykl wytwórczy: projektowanie bazy danych i relacji, implementację backendu Laravel, budowę interfejsu Blade/Tailwind, dodanie dynamicznych interakcji JavaScript, integrację z zewnętrznymi API oraz konteneryzację przez Docker Compose.
+
+Architektura monolityczna MVC okazała się właściwym wyborem dla tego zakresu funkcjonalności -- pozwoliła utrzymać spójność kodu przy jednoczesnym zachowaniu podziału odpowiedzialności (kontrolery, modele, serwisy, widoki). Laravel dostarczył gotowe mechanizmy dla najbardziej złożonych wymagań: uwierzytelniania, walidacji, ORM, cache, maili i routingu.
+
+\subsection{Napotkane trudności}
+
+\begin{itemize}
+    \item \textbf{Spójność stanu discover/czat}: Utrzymanie synchronizacji między stanem frontend (JS) a backendem bez WebSocketów wymagało przemyślanej strategii pollingu i inwalidacji cache. Rozwiązano to przez wersjonowanie kluczy cache i polling z krótkim interwałem.
+
+    \item \textbf{Filtrowanie z odległością}: Obliczanie odległości Haversine bezpośrednio w zapytaniu SQL na dużej tabeli może być kosztowne. Zoptymalizowano to przez caching wyników i filtr wstępny po kolumnach lat/lng przed obliczeniem dokładnej odległości.
+
+    \item \textbf{Inwalidacja cache}: Cache discover musi być unieważniany po swipe'ie, zmianie profilu, ale nie po każdym żądaniu. Zastosowano wersjonowanie klucza cache per użytkownik.
+
+    \item \textbf{Bezpieczeństwo czatu}: Dostęp do wiadomości musi być ograniczony do uczestników danego matcha. Każde żądanie do \texttt{ChatController} weryfikuje, że zalogowany użytkownik jest jedną ze stron dopasowania.
+
+    \item \textbf{Fallback integracji zewnętrznych}: Aplikacja musi działać nawet gdy Tenor, GIPHY lub Spotify są niedostępne lub nie skonfigurowane. Zaimplementowano wielowarstwowy fallback (Tenor v2 → Tenor v1 → GIPHY → brak GIF-ów) i opakowanie wyjątków w bloki try/catch.
+\end{itemize}
+
+\subsection{Najważniejsze rezultaty}
+
+\begin{itemize}
+    \item Wdrożono pełen przepływ użytkownika: rejestracja → onboarding → discover → match → czat.
+    \item Zaimplementowano inteligentne filtrowanie kandydatów uwzględniające wiek, odległość, subkulturę i zgodność płci/orientacji.
+    \item Zintegrowano trzy zewnętrzne API z fallbackiem i cachowaniem.
+    \item Opublikowano publiczne REST API z paginacją i cachowaniem.
+    \item Skonteneryzowano całe środowisko (app, baza, cache, poczta) w Docker Compose.
+    \item Wszystkie 20 wymaganych zagadnień kwalifikacyjnych zostało wdrożonych.
+\end{itemize}
+
+\subsection{Możliwe kierunki dalszego rozwoju}
+
+\begin{itemize}
+    \item Zastąpienie pollingu WebSocketami (np. Laravel Reverb / Soketi) dla komunikacji w czasie rzeczywistym.
+    \item Dodanie testów automatycznych: jednostkowych, integracyjnych i end-to-end (PHPUnit, Pest, Laravel Dusk).
+    \item Wdrożenie CI/CD (GitHub Actions) -- automatyczne testy i deploy po każdym push.
+    \item Panel administracyjny z narzędziami moderacji treści.
+    \item Rozbudowa REST API o autoryzację przez tokeny API (Sanctum) i endpointy zapisu.
+    \item Wdrożenie kolejek (Laravel Queue + Redis) dla wysyłki maili w tle.
+    \item Monitoring i alerty (Sentry, Prometheus, Grafana) dla środowiska produkcyjnego.
+\end{itemize}
+
+\subsection{Wniosek końcowy}
+
+Altermatch spełnia wszystkie wymagania pracy projektowej i demonstracji praktycznych umiejętności programowania aplikacji webowych. Projekt łączy klasyczną architekturę MVC z dynamicznymi interakcjami frontendowymi, trzema integracjami zewnętrznymi i pełną konteneryzacją środowiska. Zastosowany stack technologiczny (Laravel 11, MySQL, Redis, Tailwind CSS, Docker) jest reprezentatywny dla współczesnych projektów webowych i może stanowić solidną podstawę dalszego rozwoju aplikacji.
+
+\end{document}

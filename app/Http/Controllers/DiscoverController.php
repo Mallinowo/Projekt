@@ -23,7 +23,6 @@ class DiscoverController extends Controller
             'has_coords' => !is_null($user->city_lat) && !is_null($user->city_lng),
         ];
 
-        // Cache (punkt 4) - cache profiles for 5 minutes per user
         $cacheVersion = (int) Cache::get('discover_cache_version', 1);
         $cacheKey = "discover_profiles_{$user->id}_v{$cacheVersion}";
         $profiles = Cache::remember($cacheKey, 300, function () use ($user) {
@@ -33,7 +32,6 @@ class DiscoverController extends Controller
 
             $candidates = $this->fetchDiscoverCandidates($user, $excludedIds);
 
-            // Rewind fallback: when user swiped everyone, show profiles again.
             if ($candidates->isEmpty()) {
                 $candidates = $this->fetchDiscoverCandidates($user, array_values(array_unique(array_merge($matchedUserIds, [$user->id]))));
             }
@@ -171,7 +169,6 @@ class DiscoverController extends Controller
         }
 
         $distance = $this->distanceInKm($viewer, $candidate);
-        // Candidate without coordinates should still be discoverable.
         if ($distance === null) {
             return true;
         }

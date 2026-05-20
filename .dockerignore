@@ -1,0 +1,9 @@
+node_modules
+vendor
+.git
+.idea
+.vscode
+storage/framework
+storage/logs
+bootstrap/cache
+public/storage

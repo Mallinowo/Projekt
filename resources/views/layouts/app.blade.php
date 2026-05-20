@@ -37,7 +37,6 @@
 </head>
 <body class="bg-[#0a0a0f] text-[#e2e0f0] font-crimson h-full overflow-hidden">
 
-{{-- NAV --}}
 <nav class="flex items-center justify-between px-4 md:px-6 h-16 bg-[#111118] border-b border-[#2a2a3a] z-50 relative flex-shrink-0">
     <a href="{{ route('discover') }}" class="font-cinzel text-lg font-bold tracking-widest text-purple-400 hover:text-[#d6b6ff] transition-colors" style="text-shadow:0 0 18px rgba(168,85,247,.5)">
         ✦ ALTERMATCH
@@ -53,7 +52,6 @@
         <a href="{{ route('profile') }}"  class="nav-btn {{ request()->routeIs('profile*') ? 'active' : '' }}">{{ __('nav.profile') }}</a>
         <div class="w-px h-6 bg-[#2a2a3a] mx-1"></div>
 
-        {{-- Avatar --}}
         <a href="{{ route('profile') }}" class="w-10 h-10 rounded-full border-2 border-[#2a2a3a] overflow-hidden flex items-center justify-center bg-gradient-to-br from-purple-900 to-blue-900 hover:border-purple-400 transition-colors">
             @if(auth()->user()->getAvatarUrl())
                 <img src="{{ auth()->user()->getAvatarUrl() }}" class="w-full h-full object-cover">
@@ -62,7 +60,6 @@
             @endif
         </a>
 
-        {{-- Language switcher (punkt 12) --}}
         <div class="flex gap-1 ml-1">
             <a href="{{ route('locale','pl') }}" class="lang-btn {{ app()->getLocale()==='pl' ? 'active' : '' }}">PL</a>
             <a href="{{ route('locale','en') }}" class="lang-btn {{ app()->getLocale()==='en' ? 'active' : '' }}">EN</a>
@@ -81,7 +78,6 @@
     @yield('content')
 </div>
 
-{{-- Toast --}}
 <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 translate-y-20 bg-[#111118] border border-[#2a2a3a] text-[#e2e0f0] px-5 py-2 rounded-full font-mono text-xs tracking-wide transition-transform duration-300 z-[700] whitespace-nowrap shadow-2xl opacity-0" id="toast"></div>
 
 @stack('scripts')

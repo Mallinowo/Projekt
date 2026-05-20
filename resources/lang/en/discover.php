@@ -22,6 +22,7 @@ return [
     'km' => 'km',
     'years' => 'y.',
     'active_filters' => 'Active filters',
+    'change_filters' => 'Change',
     'filter_age' => 'Age: :min-:max',
     'filter_distance' => 'Max distance: :km km',
     'filter_distance_missing' => 'Set your location in profile',

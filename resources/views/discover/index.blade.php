@@ -33,6 +33,7 @@
             <div class="discover-filter-bar mb-4">
                 <div class="discover-filter-head">
                     <span class="discover-filter-kicker">{{ __('discover.active_filters') }}</span>
+                    <a href="{{ route('profile') }}#match-preferences" class="discover-filter-change">{{ __('discover.change_filters') }}</a>
                 </div>
                 <div class="discover-filter-grid">
                     <span class="discover-filter-chip discover-filter-chip-age">{{ __('discover.filter_age', ['min' => $discoverFilters['age_min'], 'max' => $discoverFilters['age_max']]) }}</span>
@@ -140,6 +141,8 @@
 .discover-filter-head {
     display: flex;
     align-items: center;
+    justify-content: space-between;
+    gap: 12px;
 }
 .discover-filter-kicker {
     font-family: Space Mono, monospace;
@@ -147,6 +150,28 @@
     letter-spacing: .24em;
     text-transform: uppercase;
     color: #a195cb;
+}
+.discover-filter-change {
+    position: relative;
+    z-index: 1;
+    flex-shrink: 0;
+    border: 1px solid rgba(168, 85, 247, .45);
+    border-radius: 9999px;
+    padding: 6px 12px;
+    font-family: Space Mono, monospace;
+    font-size: .62rem;
+    font-weight: 700;
+    letter-spacing: .08em;
+    line-height: 1;
+    text-transform: uppercase;
+    color: #d8b4fe;
+    background: rgba(168, 85, 247, .12);
+    transition: border-color .18s ease, background-color .18s ease, color .18s ease;
+}
+.discover-filter-change:hover {
+    border-color: rgba(216, 180, 254, .75);
+    color: #f5e8ff;
+    background: rgba(168, 85, 247, .2);
 }
 .discover-filter-grid {
     display: flex;
@@ -383,6 +408,19 @@
     #matchPop * {
         animation: none !important;
         transition: none !important;
+    }
+}
+@media (max-width: 640px) {
+    .discover-filter-head {
+        align-items: flex-start;
+    }
+    .discover-filter-kicker {
+        font-size: .68rem;
+        letter-spacing: .18em;
+    }
+    .discover-filter-change {
+        padding: 6px 10px;
+        font-size: .58rem;
     }
 }
 </style>
