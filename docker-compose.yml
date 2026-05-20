@@ -31,7 +31,6 @@ services:
     networks:
       - altermatch
 
-  # MySQL - baza danych (punkt 3)
   mysql:
     image: mysql:8.0
     container_name: altermatch_mysql
@@ -48,7 +47,6 @@ services:
     networks:
       - altermatch
 
-  # Redis - cache + sessions (punkt 4)
   redis:
     image: redis:alpine
     container_name: altermatch_redis
@@ -56,7 +54,6 @@ services:
     networks:
       - altermatch
 
-  # Mailpit - email testing (punkt 13)
   mailpit:
     image: axllent/mailpit
     container_name: altermatch_mailpit
