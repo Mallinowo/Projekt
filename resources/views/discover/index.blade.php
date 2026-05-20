@@ -445,6 +445,7 @@ const TRANS = {
     distance_unknown: "{{ __('discover.distance_unknown') }}",
     km: "{{ __('discover.km') }}",
     years: "{{ __('discover.years') }}",
+    new_match: "{{ __('discover.new_match') }}",
 };
 </script>
 <script src="{{ asset('js/discover.js') }}?v={{ filemtime(public_path('js/discover.js')) }}"></script>

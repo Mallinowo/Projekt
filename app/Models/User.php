@@ -60,9 +60,11 @@ class User extends Authenticatable
         return $this->hasMany(Swipe::class, 'swiped_id');
     }
 
-    public function matches(): HasMany
+    public function matches(): \Illuminate\Database\Eloquent\Builder
     {
-        return UserMatch::where('user1_id', $this->id)->orWhere('user2_id', $this->id);
+        return UserMatch::where(function ($q) {
+            $q->where('user1_id', $this->id)->orWhere('user2_id', $this->id);
+        });
     }
 
     public function hasLiked(int $userId): bool

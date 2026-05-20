@@ -58,7 +58,7 @@ class DiscoverController extends Controller
                 });
         });
 
-        $matches = $this->getUserMatches($user);
+        $matches = $this->getUserMatches($user)->values();
 
         return view('discover.index', compact('profiles', 'matches', 'discoverFilters'));
     }
@@ -142,6 +142,7 @@ class DiscoverController extends Controller
                 'interests:id,user_id,name',
                 'artists:id,user_id,name',
             ])
+            ->where('onboarding_completed', true)
             ->whereNotIn('id', $excludedIds)
             ->whereBetween('age', [$preferredAgeMin, $preferredAgeMax])
             ->whereIn('subculture', $preferredSubcultures)

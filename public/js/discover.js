@@ -81,7 +81,7 @@ function appendMatchToSidebar(match) {
     const avatar = match?.avatar
         ? `<img src="${escapeAttr(match.avatar)}" class="w-full h-full object-cover">`
         : `<span class="text-sm">&#x1F5A4;</span>`;
-    const lastMsg = escapeHtml(String(match?.last_msg || 'Nowe dopasowanie!')).slice(0, 42);
+    const lastMsg = escapeHtml(String(match?.last_msg || TRANS.new_match || 'New match')).slice(0, 42);
 
     const row = document.createElement('div');
     row.className = 'sb-match-item flex items-center gap-2 px-3 py-2.5 border-b border-[#2a2a3a] cursor-pointer hover:bg-[#16161f] transition-colors';
