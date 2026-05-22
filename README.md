@@ -17,7 +17,7 @@
 
 ---
 
-Altermatch działa na zasadzie swipe left/right — filtruje kandydatów według subkultury, płci, orientacji, wieku i odległości. Zamiast szerokiej publiczności celuje w osoby, które wiedzą czym jest *goth* i nie tłumaczą sobie nawzajem skrótów nazw zespołów.
+Altermatch działa na zasadzie swipe left/right — filtruje kandydatów według subkultury, płci, orientacji, wieku i odległości.
 
 > Projekt zrealizowany w ramach **Programowania i Projektowania Systemów Informatycznych 1**  
 > Collegium Witelona, Legnica · gr. S2PAM1 · [github.com/Mallinowo/Projekt](https://github.com/Mallinowo/Projekt)
@@ -28,11 +28,11 @@ Altermatch działa na zasadzie swipe left/right — filtruje kandydatów według
 
 **Profil i onboarding**
 - Rejestracja z wyborem subkultury, płci i orientacji
-- Onboarding po pierwszym logowaniu — zdjęcia, bio, zainteresowania, artyści
-- Edycja profilu: galeria do 6 zdjęć, zainteresowania (5–15), ulubieni artyści
+- Onboarding po pierwszym logowaniu  zdjęcia, bio, zainteresowania, artyści
+- Edycja profilu: galeria do 6 zdjęć, zainteresowania, ulubieni artyści
 - Preferencje odkrywania: zakres wieku, dystans, preferowane subkultury
 - Opcjonalna integracja ze Spotify (OAuth2, import top artists)
-- Lokalizacja PL / EN
+- PL / EN
 
 **Odkrywanie**
 - Karty kandydatów z filtrowaniem po wieku, subkulturze, odległości i zgodności płci/orientacji
