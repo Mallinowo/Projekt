@@ -1,109 +1,157 @@
+<div align="center">
+
 # Altermatch
 
-Aplikacja randkowa dla alternatywnych subkultur — emo, goth, scene, punk, metalhead. Zbudowana na Laravel 11, MySQL, Redis i Tailwind CSS. Działa w pełni przez Docker.
+**Aplikacja randkowa dla alternatywnych subkultur**
 
-## Spis treści
+*Emo · Goth · Scene · Punk · Metalhead*
 
-- [Funkcje](#funkcje)
-- [Stack technologiczny](#stack-technologiczny)
-- [Architektura](#architektura)
-- [Uruchomienie](#uruchomienie)
-- [Konta demo](#konta-demo)
-- [REST API](#rest-api)
-- [Zmienne środowiskowe](#zmienne-środowiskowe)
-- [Struktura projektu](#struktura-projektu)
-- [Sprawozdanie](#sprawozdanie)
-- [Autorzy](#autorzy)
+![PHP](https://img.shields.io/badge/PHP-8.2-777BB4?style=flat-square&logo=php&logoColor=white)
+![Laravel](https://img.shields.io/badge/Laravel-11-FF2D20?style=flat-square&logo=laravel&logoColor=white)
+![MySQL](https://img.shields.io/badge/MySQL-8-4479A1?style=flat-square&logo=mysql&logoColor=white)
+![Redis](https://img.shields.io/badge/Redis-DC382D?style=flat-square&logo=redis&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=flat-square&logo=tailwind-css&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white)
+
+</div>
+
+---
+
+Altermatch działa na zasadzie swipe left/right — filtruje kandydatów według subkultury, płci, orientacji, wieku i odległości. Zamiast szerokiej publiczności celuje w osoby, które wiedzą czym jest *goth* i nie tłumaczą sobie nawzajem skrótów nazw zespołów.
+
+> Projekt zrealizowany w ramach **Programowania i Projektowania Systemów Informatycznych 1**  
+> Collegium Witelona, Legnica · gr. S2PAM1 · [github.com/Mallinowo/Projekt](https://github.com/Mallinowo/Projekt)
 
 ---
 
 ## Funkcje
 
-### Rejestracja i profil
+**Profil i onboarding**
 - Rejestracja z wyborem subkultury, płci i orientacji
-- Onboarding po pierwszym logowaniu (zdjęcie, bio, zainteresowania, artyści)
+- Onboarding po pierwszym logowaniu — zdjęcia, bio, zainteresowania, artyści
 - Edycja profilu: galeria do 6 zdjęć, zainteresowania (5–15), ulubieni artyści
-- Preferencje odkrywania: zakres wieku, maksymalny dystans, preferowane subkultury
-- Opcjonalna integracja ze Spotify (OAuth2, pobieranie ulubionych artystów)
-- Lokalizacja PL/EN
+- Preferencje odkrywania: zakres wieku, dystans, preferowane subkultury
+- Opcjonalna integracja ze Spotify (OAuth2, import top artists)
+- Lokalizacja PL / EN
 
-### Odkrywanie profili
+**Odkrywanie**
 - Karty kandydatów z filtrowaniem po wieku, subkulturze, odległości i zgodności płci/orientacji
-- Akcje: pomiń, like, superlike — obsługiwane przyciskami i gestem przeciągania
-- Obliczanie odległości formułą Haversine na podstawie geokodowanych miast
-- Caching listy kandydatów w Redis
+- Akcje: pomiń, like, superlike — przyciskami i gestem drag-to-swipe
+- Odległość liczona formułą Haversine na podstawie geokodowanych miast
+- Lista kandydatów cachowana w Redis
 
-### Dopasowania i czat
-- Wzajemne polubienie tworzy dopasowanie (match)
-- E-mail powiadomienie o nowym matchu
-- Czat tekstowy i GIF (Tenor / GIPHY)
-- Reakcje emoji na wiadomości
-- Odznaczanie wiadomości jako przeczytanych
+**Czat i dopasowania**
+- Wzajemne polubienie tworzy match + e-mail z powiadomieniem
+- Czat tekstowy i GIF (Tenor v2 / GIPHY z fallbackiem)
+- Reakcje emoji na wiadomości, odznaczanie jako przeczytane
 - Polling bez WebSocketów
 
-### API i integracje
-- REST API: lista profili, profil po ID, słownik subkultur
-- Spotify API — wyszukiwanie artystów, pobieranie top artists
-- Tenor v2 / GIPHY — wyszukiwanie GIF-ów z fallbackiem
-- Open-Meteo Geocoding — zamiana nazwy miasta na współrzędne
+**API**
+- REST API: lista profili, profil po ID, słownik subkultur (`/api/v1/*`)
+- Integracje: Spotify, Tenor/GIPHY, Open-Meteo Geocoding
 
 ---
 
 ## Stack technologiczny
 
-| # | Zagadnienie | Technologia |
-|---|-------------|-------------|
-| 1 | Framework MVC | Laravel 11 (PHP 8.2) |
-| 2 | Framework CSS | Tailwind CSS |
-| 3 | Baza danych | MySQL 8 |
-| 4 | Cache | Redis (Predis) |
-| 5 | Dependency manager | Composer + npm / Vite |
-| 6 | HTML | Blade templates |
-| 7 | CSS | Tailwind CSS + własne style |
-| 8 | JavaScript | Vanilla JS, Fetch API |
-| 9 | Routing | Laravel Router + Nginx |
-| 10 | ORM | Eloquent |
-| 11 | Uwierzytelnianie | Laravel Auth + Sanctum |
-| 12 | Lokalizacja | Laravel i18n (PL/EN) |
-| 13 | Mailing | Laravel Mail + Mailpit (dev) |
-| 14 | Formularze | Blade + CSRF + Request Validation |
-| 15 | Asynchroniczność | Fetch API, polling, dynamiczne UI |
-| 16 | Konsumpcja API | Spotify, Tenor/GIPHY, Open-Meteo |
-| 17 | Publikacja API | REST API `/api/v1/*` |
-| 18 | RWD | Tailwind responsive breakpoints |
-| 19 | Logger | Laravel Log (rejestracja, swipe, mail, Spotify) |
-| 20 | Deployment | Docker + Docker Compose |
+| Warstwa | Technologia |
+|---------|-------------|
+| Framework | Laravel 11 (PHP 8.2) |
+| Frontend | Blade · Tailwind CSS · Vanilla JS |
+| Baza danych | MySQL 8 |
+| Cache / Sesje | Redis (Predis) |
+| ORM | Eloquent |
+| Auth | Laravel Auth + Sanctum |
+| Mailing | Laravel Mail + Mailpit (dev) |
+| Lokalizacja | Laravel i18n (PL/EN) |
+| Zewnętrzne API | Spotify · Tenor/GIPHY · Open-Meteo |
+| Deployment | Docker + Docker Compose |
 
 ---
 
 ## Architektura
 
 ```
-Browser
-  │
-  ▼
-Nginx (port 8080)
-  │
-  ▼
-PHP-FPM / Laravel 11
-  ├── AuthController       → rejestracja, logowanie, locale
-  ├── OnboardingController → wizard po rejestracji
-  ├── DiscoverController   → kandydaci z filtrowaniem i cache
-  ├── SwipeController      → zapis decyzji, tworzenie matchy
-  ├── ChatController       → wiadomości, GIF-y, reakcje
-  ├── ProfileController    → edycja profilu, upload zdjęć
-  ├── SpotifyController    → OAuth2 + artyści
-  └── ApiController        → REST API /api/v1/*
-  │
-  ├── MySQL 8    ← migracje Eloquent, relacje
-  ├── Redis      ← cache discover, API, sesje, GIF-y
-  └── Mailpit    ← lokalne przechwytywanie maili (dev)
+Browser → Nginx → PHP-FPM / Laravel 11
+                      │
+          ┌───────────┼───────────────┐
+          │           │               │
+        MySQL 8     Redis         Mailpit
+     (Eloquent ORM) (cache/sesje) (dev mail)
 ```
+
+**Kontrolery:** `AuthController` · `OnboardingController` · `DiscoverController` · `SwipeController` · `ChatController` · `ProfileController` · `SpotifyController` · `ApiController`
 
 **Modele i relacje:**
 - `User` → hasMany `Photo`, `Interest`, `Artist`, `Swipe`
 - `User` ↔ `User` → belongsToMany przez `UserMatch`
 - `UserMatch` → hasMany `Message` → hasMany `MessageReaction`
+
+### Schemat bazy danych (ERD)
+
+```mermaid
+erDiagram
+    users {
+        bigint id PK
+        varchar name
+        varchar email
+        enum subculture
+        enum gender
+        enum orientation
+        varchar city
+    }
+    photos {
+        bigint id PK
+        bigint user_id FK
+        varchar path
+    }
+    interests {
+        bigint id PK
+        bigint user_id FK
+        varchar name
+    }
+    artists {
+        bigint id PK
+        bigint user_id FK
+        varchar name
+    }
+    swipes {
+        bigint id PK
+        bigint swiper_id FK
+        bigint swiped_id FK
+        enum direction
+    }
+    matches {
+        bigint id PK
+        bigint user1_id FK
+        bigint user2_id FK
+    }
+    messages {
+        bigint id PK
+        bigint match_id FK
+        bigint sender_id FK
+        enum type
+        text body
+    }
+    message_reactions {
+        bigint id PK
+        bigint message_id FK
+        bigint user_id FK
+        varchar emoji
+    }
+
+    users ||--o{ photos : "zdjecia"
+    users ||--o{ interests : "zainteresowania"
+    users ||--o{ artists : "artysci"
+    users ||--o{ swipes : "swiper"
+    users ||--o{ swipes : "swiped"
+    users ||--o{ matches : "user1"
+    users ||--o{ matches : "user2"
+    matches ||--o{ messages : "wiadomosci"
+    users ||--o{ messages : "nadawca"
+    messages ||--o{ message_reactions : "reakcje"
+    users ||--o{ message_reactions : "reagujacy"
+```
 
 ---
 
@@ -111,87 +159,61 @@ PHP-FPM / Laravel 11
 
 ### Wymagania
 
-- Docker
-- Docker Compose
+- Docker + Docker Compose
 - Wolne porty: `8080`, `8025`, `3307`
 
 ### Kroki
 
 ```bash
-# 1. Sklonuj repozytorium
-git clone <adres_repozytorium>
-cd altermatch
-
-# 2. Skopiuj plik środowiskowy
+git clone https://github.com/Mallinowo/Projekt && cd Projekt
 cp .env.example .env
-
-# 3. Zbuduj i uruchom kontenery
 docker compose up -d --build
-
-# 4. Wygeneruj klucz aplikacji
 docker compose exec app php artisan key:generate
-
-# 5. Uruchom migracje i seedery
 docker compose exec app php artisan migrate --seed
-
-# 6. Utwórz symlink do storage
 docker compose exec app php artisan storage:link
 ```
-
-### Dostęp
 
 | Serwis | URL |
 |--------|-----|
 | Aplikacja | http://localhost:8080 |
-| Mailpit (poczta dev) | http://localhost:8025 |
+| Mailpit | http://localhost:8025 |
 | MySQL | localhost:3307 |
 
-### Resetowanie środowiska
-
 ```bash
-# Wyczyść cache po zmianach konfiguracji
-docker compose exec app php artisan optimize:clear
-
-# Przebuduj bazę z seederami
+# Reset środowiska
 docker compose exec app php artisan migrate:fresh --seed
+docker compose exec app php artisan optimize:clear
 ```
 
 ---
 
 ## Konta demo
 
-Hasło dla wszystkich kont: `demo123`
+Hasło dla wszystkich: `demo123`
 
-| E-mail | Imię | Subkultura | Płeć |
-|--------|------|------------|------|
-| `moon@demo.pl` | Klaudia | emo | kobieta |
-| `void@demo.pl` | Krystian | goth | mężczyzna |
-| `goth@demo.pl` | Julka | scene | kobieta |
-| `rain@demo.pl` | Oliwier | punk | mężczyzna |
-| `crypt@demo.pl` | Luciusz | metalhead | mężczyzna |
-
-### Szybki test
-
-1. Otwórz http://localhost:8080
-2. Zaloguj się jako `moon@demo.pl` / `demo123`
-3. Przejdź do **Odkrywaj** i wykonaj kilka swipe'ów
-4. Zmień filtry odkrywania w **Profil**
-5. Otwórz **Czat** — sprawdź wiadomości i GIF-y
-6. Sprawdź maile na http://localhost:8025
+| E-mail | Imię | Subkultura |
+|--------|------|------------|
+| `moon@demo.pl` | Klaudia | emo |
+| `void@demo.pl` | Krystian | goth |
+| `goth@demo.pl` | Julka | scene |
+| `rain@demo.pl` | Oliwier | punk |
+| `crypt@demo.pl` | Luciusz | metalhead |
 
 ---
 
 ## REST API
 
-Publiczne endpointy nie wymagają uwierzytelnienia.
-
-### Pobierz listę profili
+Endpointy publiczne, bez uwierzytelnienia.
 
 ```http
-GET /api/v1/profiles?page=1
+GET /api/v1/profiles          # lista profili (paginacja)
+GET /api/v1/profiles/{id}     # profil po ID
+GET /api/v1/subcultures       # słownik subkultur
 ```
 
-Odpowiedź:
+<details>
+<summary>Przykładowa odpowiedź <code>GET /api/v1/profiles</code></summary>
+
 ```json
 {
   "data": [
@@ -209,83 +231,20 @@ Odpowiedź:
 }
 ```
 
-### Pobierz profil po ID
-
-```http
-GET /api/v1/profiles/{id}
-```
-
-### Pobierz słownik subkultur
-
-```http
-GET /api/v1/subcultures
-```
-
-Odpowiedź:
-```json
-{
-  "emo": { "label": "Emo", "icon": "🖤" },
-  "goth": { "label": "Goth", "icon": "🦇" },
-  "scene": { "label": "Scene", "icon": "🌈" },
-  "punk": { "label": "Punk", "icon": "⚡" },
-  "metalhead": { "label": "Metalhead", "icon": "🤘" }
-}
-```
-
-### Przykład użycia
-
-```bash
-curl http://localhost:8080/api/v1/profiles
-curl http://localhost:8080/api/v1/profiles/1
-curl http://localhost:8080/api/v1/subcultures
-```
+</details>
 
 ---
 
 ## Zmienne środowiskowe
 
-Plik `.env.example` zawiera domyślną konfigurację dla Docker Compose.
+Plik `.env.example` zawiera domyślną konfigurację dla Docker Compose. Integracje Spotify i GIF działają bez kluczy (funkcje są wyłączone).
 
 | Zmienna | Opis |
 |---------|------|
-| `APP_URL` | Adres aplikacji (domyślnie `http://localhost:8080`) |
-| `DB_HOST` / `DB_DATABASE` | Konfiguracja MySQL |
-| `CACHE_STORE=redis` | Backend cache |
-| `SESSION_DRIVER=redis` | Backend sesji |
-| `MAIL_HOST=mailpit` | Serwer pocztowy (dev) |
-| `TENOR_API_KEY` | Klucz do Tenor GIF API |
-| `GIPHY_API_KEY` | Klucz do GIPHY API |
-| `SPOTIFY_CLIENT_ID` | Spotify OAuth2 Client ID |
-| `SPOTIFY_CLIENT_SECRET` | Spotify OAuth2 Client Secret |
+| `TENOR_API_KEY` | Tenor GIF API |
+| `GIPHY_API_KEY` | GIPHY API (fallback) |
+| `SPOTIFY_CLIENT_ID` / `_SECRET` | Spotify OAuth2 |
 | `SPOTIFY_REDIRECT_URI` | URI callbacku Spotify |
-
-Integracje Spotify i GIF działają bez kluczy (funkcje są po prostu wyłączone).
-
----
-
-## Struktura projektu
-
-```
-altermatch/
-├── app/
-│   ├── Http/Controllers/   # AuthController, DiscoverController, ChatController...
-│   ├── Models/             # User, Photo, Swipe, UserMatch, Message, MessageReaction
-│   └── Services/           # SpotifyService, GifService, CityLocationService
-├── database/
-│   ├── migrations/         # Schemat bazy (users, photos, swipes, matches, messages...)
-│   └── seeders/            # DatabaseSeeder z kontami demo
-├── resources/
-│   ├── views/              # Blade: auth, discover, chat, profile, onboarding, emails
-│   └── lang/               # Tłumaczenia PL/EN
-├── routes/
-│   ├── web.php             # Trasy web (auth, discover, swipe, chat, profile, spotify)
-│   └── api.php             # Trasy REST API /api/v1/*
-├── public/js/
-│   ├── discover.js         # Animacje kart, swipe, popup matcha
-│   └── chat.js             # Wiadomości, GIF-y, reakcje, polling
-├── docker-compose.yml      # app, nginx, mysql, redis, mailpit
-└── sprawozdanie.tex        # Sprawozdanie projektu (LaTeX)
-```
 
 ---
 
@@ -298,6 +257,8 @@ altermatch/
 
 Warianty kolorystyczne: [docs/color-variants.html](docs/color-variants.html)
 
+---
+
 ## Autorzy
 
 | Imię i nazwisko | Nr albumu |
@@ -305,8 +266,3 @@ Warianty kolorystyczne: [docs/color-variants.html](docs/color-variants.html)
 | Jakub Maliński | 45891 |
 | Michał Kuchar | 44924 |
 | Wojciech Kasprzyk | 44918 |
-
-Projekt realizowany w ramach: **Programowanie i Projektowanie Systemów Informatycznych 1**  
-Uczelnia: Collegium Witelona, Legnica  
-Repozytorium: <https://github.com/Mallinowo/Projekt>
-

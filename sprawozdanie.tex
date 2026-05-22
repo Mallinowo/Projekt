@@ -15,6 +15,8 @@
 \usepackage{caption}
 \usepackage{graphicx}
 \usepackage{float}
+\usepackage{tikz}
+\usetikzlibrary{shapes.multipart,positioning,arrows.meta}
 
 \geometry{margin=2.5cm}
 \setlist[itemize]{leftmargin=1.25cm}
@@ -54,7 +56,7 @@
 \newcommand{\albumB}{44924}
 \newcommand{\autorC}{Wojciech Kasprzyk}
 \newcommand{\albumC}{44918}
-\newcommand{\grupaStudentow}{Collegium Witelona, Legnica}
+\newcommand{\grupaStudentow}{Collegium Witelona, Legnica \textemdash\ gr.~S2PAM1}
 \newcommand{\linkRepo}{https://github.com/Mallinowo/Projekt}
 % -------------------------------------------------------
 
@@ -93,11 +95,11 @@
 \section{Wstęp}
 % =======================================================
 
-Niniejsze sprawozdanie opisuje projekt \textbf{Altermatch} -- aplikację internetową inspirowaną serwisami randkowymi, w szczególności mechaniką kart i dopasowań rozsławioną przez Tindera. Aplikacja jest przeznaczona dla osób identyfikujących się z alternatywnymi subkulturami: \textit{emo, goth, scene, punk} i \textit{metalhead}.
+\textbf{Altermatch} to aplikacja randkowa dla użytkowników związanych z alternatywnymi subkulturami: \textit{emo, goth, scene, punk} i \textit{metalhead}. Pomysł wynikał z obserwacji, że mainstreamowe serwisy randkowe projektowane są pod jak najszerszą publiczność -- osoby z silną tożsamością subkulturową często czują się tam nie na miejscu. Zamiast walczyć z algorytmem, który nie wie czym jest \textit{goth}, postanowiliśmy zbudować coś własnego.
 
-Celem projektu było stworzenie kompletnej, działającej aplikacji webowej pokrywającej wszystkie 20 zagadnień kwalifikacyjnych: od architektury MVC, przez bazy danych, cache, uwierzytelnianie, lokalizację, mailing, asynchroniczne interakcje, konsumpcję i publikację API, aż po wdrożenie w kontenerach Docker.
+Mechanika aplikacji wzoruje się na swipe'ach rozsławionych przez Tindera, ale filtruje kandydatów przez pryzmat subkultury, płci, orientacji, wieku i odległości -- żeby trafiały do nas tylko profile, które faktycznie mogą mieć sens.
 
-System został zrealizowany jako monolityczna aplikacja pełnostackowa. Backend oparto na \textbf{PHP 8.2} i \textbf{Laravel 11}, frontend na szablonach \textbf{Blade}, \textbf{Tailwind CSS} i \textbf{Vanilla JavaScript}, a środowisko uruchomieniowe opisano przy pomocy \textbf{Docker Compose}. Dane przechowuje \textbf{MySQL 8}, a cache i sesje obsługuje \textbf{Redis}.
+Od strony wymagań projektowych Altermatch pokrywa wszystkie 20 zagadnień kwalifikacyjnych: architekturę MVC, ORM, cache, uwierzytelnianie, lokalizację, mailing, asynchroniczne interakcje, konsumpcję i publikację REST API oraz deployment w kontenerach Docker. Stack: \textbf{Laravel 11} (PHP~8.2) na backendzie, \textbf{MySQL~8} i \textbf{Redis} jako warstwa danych i cache, \textbf{Tailwind CSS} i \textbf{Vanilla~JS} na frontendzie, całość opakowana w \textbf{Docker Compose}.
 
 % =======================================================
 \section{Opis funkcjonalny systemu}
@@ -250,18 +252,16 @@ System jest monolityczną aplikacją MVC opartą na konwencjach Laravel. Warstwy
 
 Uproszczony diagram przepływu żądania:
 
-\begin{center}
-\begin{verbatim}
-Browser → Nginx → PHP-FPM/Laravel
-  │
-  ├── Middleware: auth, onboarding_completed, locale
-  ├── Router: web.php / api.php
-  ├── Controller → Model (Eloquent) → MySQL
-  │              → Cache (Redis)
-  │              → Service (Spotify / GIF / Geocoding)
-  └── View: Blade template → HTML → Browser
-\end{verbatim}
-\end{center}
+\begin{lstlisting}[language={}]
+Browser -> Nginx -> PHP-FPM/Laravel
+  |
+  +-- Middleware: auth, onboarding_completed, locale
+  +-- Router: web.php / api.php
+  +-- Controller -> Model (Eloquent) -> MySQL
+  |              -> Cache (Redis)
+  |              -> Service (Spotify / GIF / Geocoding)
+  +-- View: Blade template -> HTML -> Browser
+\end{lstlisting}
 
 \subsection{Backend}
 
@@ -313,6 +313,101 @@ Relacje Eloquent:
     \item \texttt{UserMatch} \textrightarrow\ \texttt{hasMany} Message,
     \item \texttt{Message} \textrightarrow\ \texttt{hasMany} MessageReaction.
 \end{itemize}
+
+\begin{figure}[H]
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}[
+    node distance=1.8cm and 3.5cm,
+    entity/.style={
+        rectangle split, rectangle split parts=2,
+        draw=black, thick,
+        rectangle split part fill={blue!18, blue!4},
+        font=\scriptsize\ttfamily,
+        align=left, inner sep=3pt
+    },
+    arr/.style={-{Stealth[length=5pt,width=4pt]}, thick},
+    darr/.style={-{Stealth[length=5pt,width=4pt]}, thick, dashed, draw=gray},
+    lbl/.style={font=\tiny\sffamily, fill=white, inner sep=1pt, midway}
+]
+
+\node[entity] (users) {%
+    \textbf{users}%
+    \nodepart{two}%
+    \underline{id}\ name\ email\ password\\%
+    age\ gender\ orientation\ subculture\\%
+    city\ city\_lat\ city\_lng\\%
+    bio\ avatar\ locale\\%
+    onboarding\_completed\\%
+    pref\_age\_min\ pref\_age\_max\\%
+    pref\_max\_distance\_km\\%
+    pref\_subcultures (JSON)%
+};
+
+\node[entity, above left=1.5cm and 5.0cm of users] (photos) {%
+    \textbf{photos}%
+    \nodepart{two}%
+    \underline{id}\ \textit{user\_id}\ path\ order%
+};
+
+\node[entity, above=3.2cm of users] (interests) {%
+    \textbf{interests}%
+    \nodepart{two}%
+    \underline{id}\ \textit{user\_id}\ name%
+};
+
+\node[entity, above right=1.5cm and 5.0cm of users] (artists) {%
+    \textbf{artists}%
+    \nodepart{two}%
+    \underline{id}\ \textit{user\_id}\ name%
+};
+
+\node[entity, below left=2.5cm and 3.2cm of users] (swipes) {%
+    \textbf{swipes}%
+    \nodepart{two}%
+    \underline{id}\\%
+    \textit{swiper\_id}\ \textit{swiped\_id}\\%
+    direction%
+};
+
+\node[entity, right=5.5cm of users] (matches) {%
+    \textbf{matches}%
+    \nodepart{two}%
+    \underline{id}\\%
+    \textit{user1\_id}\ \textit{user2\_id}%
+};
+
+\node[entity, below=2.5cm of matches] (messages) {%
+    \textbf{messages}%
+    \nodepart{two}%
+    \underline{id}\ \textit{match\_id}\ \textit{sender\_id}\\%
+    type\ body\ gif\_url\ read\_at%
+};
+
+\node[entity, below=2.0cm of messages] (reactions) {%
+    \textbf{message\_reactions}%
+    \nodepart{two}%
+    \underline{id}\ \textit{message\_id}\ \textit{user\_id}\\%
+    emoji%
+};
+
+\draw[arr] (photos)    -- node[lbl,above,sloped]{N:1} (users);
+\draw[arr] (interests) -- node[lbl,left]{N:1}         (users);
+\draw[arr] (artists)   -- node[lbl,above,sloped]{N:1} (users);
+\draw[arr] (swipes)    -- node[lbl,above,sloped]{N:1} (users);
+\draw[arr] (matches)   -- node[lbl,above]{N:M}        (users);
+\draw[arr] (messages)  -- node[lbl,right]{N:1}        (matches);
+\draw[arr] (reactions) -- node[lbl,right]{N:1}        (messages);
+\draw[darr] (messages.west) to[out=180,in=270]
+    node[lbl,below,near end]{sender\_id} (users.south);
+\draw[darr] (reactions.west) to[out=180,in=250,looseness=0.8]
+    node[lbl,below,near start]{user\_id} (users.south west);
+
+\end{tikzpicture}%
+}
+\caption{Diagram ERD -- schemat bazy danych aplikacji Altermatch. \underline{Podkreślenie} -- klucz główny (PK), \textit{kursywa} -- klucz obcy (FK). Linie przerywane oznaczają dodatkowe relacje FK (\texttt{sender\_id}, \texttt{user\_id}).}
+\label{fig:erd}
+\end{figure}
 
 \subsection{Cache i sesje}
 
@@ -601,11 +696,11 @@ Wymagane: TeX Live lub MiKTeX.
 \hline
 \textbf{Członek zespołu} & \textbf{Zakres odpowiedzialności} \\
 \hline
-\autorA & TODO -- np. Backend: modele, migracje, kontrolery DiscoverController i SwipeController, logika filtrowania i cache \\
+\autorA & Backend: modele Eloquent i migracje, \texttt{DiscoverController} (filtrowanie kandydatów, algorytm Haversine, cache Redis), \texttt{SwipeController} (logika matchy), publiczne REST API, konfiguracja Redis \\
 \hline
-\autorB & TODO -- np. Frontend: widoki Blade, Tailwind CSS, JavaScript (discover.js, chat.js), RWD \\
+\autorB & Frontend: szablony Blade, Tailwind CSS, responsywność RWD, JavaScript (\texttt{discover.js} -- animacje drag-to-swipe, popup matcha; \texttt{chat.js} -- polling, GIF-y, reakcje emoji), widoki onboardingu i profilu \\
 \hline
-\autorC & TODO -- np. Integracje: Spotify, Tenor/GIPHY, geokodowanie, Docker, mailing, REST API \\
+\autorC & Integracje i infrastruktura: Spotify OAuth2, Tenor\,v2/GIPHY z fallbackiem, geokodowanie Open-Meteo, Docker Compose, konfiguracja Nginx, mailing (Laravel Mail + Mailpit), \texttt{AuthController}, \texttt{ProfileController} \\
 \hline
 \end{longtable}
 
@@ -658,6 +753,8 @@ Architektura monolityczna MVC okazała się właściwym wyborem dla tego zakresu
 
 \subsection{Wniosek końcowy}
 
-Altermatch spełnia wszystkie wymagania pracy projektowej i demonstracji praktycznych umiejętności programowania aplikacji webowych. Projekt łączy klasyczną architekturę MVC z dynamicznymi interakcjami frontendowymi, trzema integracjami zewnętrznymi i pełną konteneryzacją środowiska. Zastosowany stack technologiczny (Laravel 11, MySQL, Redis, Tailwind CSS, Docker) jest reprezentatywny dla współczesnych projektów webowych i może stanowić solidną podstawę dalszego rozwoju aplikacji.
+Altermatch był dla nas dobrym projektem -- wystarczająco złożonym, żeby każde zagadnienie kwalifikacyjne miało sens w kontekście realnej funkcjonalności, a nie \textit{feature for the sake of feature}. Praca nad spójnością stanu między frontendem a backendem bez WebSocketów, debugowanie inwalidacji cache czy przepływ OAuth2 Spotify nauczyły nas więcej niż niejedne ćwiczenia laboratoryjne.
+
+Projekt spełnia wszystkie 20 wymagań kwalifikacyjnych, jest kompletny i działa w środowisku Docker. Zastosowany stack (Laravel~11, MySQL, Redis, Tailwind CSS, Docker) jest reprezentatywny dla współczesnych aplikacji webowych i stanowi solidną bazę do dalszego rozwoju.
 
 \end{document}

@@ -78,7 +78,7 @@
     @yield('content')
 </div>
 
-<div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 translate-y-20 bg-[#111118] border border-[#2a2a3a] text-[#e2e0f0] px-5 py-2 rounded-full font-mono text-xs tracking-wide transition-transform duration-300 z-[700] whitespace-nowrap shadow-2xl opacity-0" id="toast"></div>
+<div id="toast" class="fixed bottom-6 left-1/2 bg-[#111118] border border-[#2a2a3a] text-[#e2e0f0] px-5 py-2 rounded-full font-mono text-xs tracking-wide z-[700] whitespace-nowrap shadow-2xl" style="display:none"></div>
 
 @stack('scripts')
 </body>

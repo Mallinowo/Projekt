@@ -58,6 +58,17 @@ function escapeAttr(s) {
         .replace(/>/g, '&gt;');
 }
 
+function crossFadePhoto(img, newSrc) {
+    if (REDUCED_MOTION || !img.parentNode) { img.src = newSrc; return; }
+    const overlay = document.createElement('img');
+    overlay.src = newSrc;
+    overlay.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .3s ease;pointer-events:none;user-select:none;';
+    img.parentNode.appendChild(overlay);
+    const finish = () => { img.src = newSrc; overlay.remove(); };
+    overlay.onload = () => { overlay.style.opacity = '1'; setTimeout(finish, 300); };
+    overlay.onerror = finish;
+}
+
 function updateSidebarCount() {
     const counter = document.getElementById('sbCount');
     if (!counter) return;
@@ -321,7 +332,7 @@ function makeCard(p, depth) {
             : (idx + 1) % photos.length;
         ph.dataset.idx = idx;
         const img = ph.querySelector('img');
-        if(img) img.src = photos[idx];
+        if(img) crossFadePhoto(img, photos[idx]);
         ph.querySelectorAll('.ph-dot').forEach((d,i) => d.classList.toggle('on', i === idx));
     });
 
@@ -423,9 +434,26 @@ function onDragMove(e) {
     const dx = pt.clientX - startX;
     const dy = pt.clientY - startY;
     curCard.style.transform = `translate(${dx}px,${dy}px) rotate(${dx * .07}deg)`;
-    curCard.querySelector('.s-nope').style.opacity  = dx < -25 ? Math.min(1, Math.abs(dx)/80) : 0;
-    curCard.querySelector('.s-yep').style.opacity   = dx >  25 ? Math.min(1, dx/80)           : 0;
-    curCard.querySelector('.s-super').style.opacity = dy < -30 ? Math.min(1, Math.abs(dy)/60) : 0;
+
+    const nopeEl = curCard.querySelector('.s-nope');
+    const yepEl  = curCard.querySelector('.s-yep');
+    const supEl  = curCard.querySelector('.s-super');
+
+    const nopeOp = dx < -25 ? Math.min(1, Math.abs(dx) / 80) : 0;
+    const yepOp  = dx >  25 ? Math.min(1, dx / 80)           : 0;
+    const supOp  = dy < -30 ? Math.min(1, Math.abs(dy) / 60) : 0;
+
+    nopeEl.style.opacity   = nopeOp;
+    nopeEl.style.transform = `rotate(8deg) scale(${(0.75 + 0.35 * nopeOp).toFixed(3)})`;
+    nopeEl.style.boxShadow = !REDUCED_MOTION && nopeOp > 0 ? `0 0 ${Math.round(nopeOp * 22)}px rgba(239,68,68,${(nopeOp * 0.55).toFixed(2)})` : '';
+
+    yepEl.style.opacity   = yepOp;
+    yepEl.style.transform = `rotate(-8deg) scale(${(0.75 + 0.35 * yepOp).toFixed(3)})`;
+    yepEl.style.boxShadow = !REDUCED_MOTION && yepOp > 0 ? `0 0 ${Math.round(yepOp * 22)}px rgba(16,185,129,${(yepOp * 0.55).toFixed(2)})` : '';
+
+    supEl.style.opacity   = supOp;
+    supEl.style.transform = `translateX(-50%) scale(${(0.75 + 0.35 * supOp).toFixed(3)})`;
+    supEl.style.boxShadow = !REDUCED_MOTION && supOp > 0 ? `0 0 ${Math.round(supOp * 22)}px rgba(251,191,36,${(supOp * 0.55).toFixed(2)})` : '';
 }
 
 function onDragEnd(e) {
@@ -445,10 +473,17 @@ function onDragEnd(e) {
     else if(dy < -85) { pulseActionButton('up'); flyOut(curCard, 'up');    curCard = null; }
     else {
         const c = curCard; curCard = null;
-        c.style.transition = 'transform .35s cubic-bezier(.25,.46,.45,.94)';
-        applyDepthStyle(c, 0, false);
-        ['.s-nope','.s-yep','.s-super'].forEach(s => c.querySelector(s).style.opacity = 0);
-        setTimeout(() => { c.style.transition = 'none'; bindDrag(c); }, 360);
+        c.style.zIndex  = '100';
+        c.style.opacity = '1';
+        c.style.transition = REDUCED_MOTION
+            ? 'transform .18s ease'
+            : 'transform .48s cubic-bezier(.34,1.56,.64,1)';
+        c.style.transform = 'translateY(0) scale(1)';
+        ['.s-nope','.s-yep','.s-super'].forEach(s => {
+            const el = c.querySelector(s);
+            if(el) { el.style.opacity = '0'; el.style.transform = ''; el.style.boxShadow = ''; }
+        });
+        setTimeout(() => { c.style.transition = 'none'; bindDrag(c); }, 500);
     }
 }
 
@@ -582,11 +617,22 @@ function showToast(msg, type) {
     t.textContent       = msg;
     t.style.borderColor = '';
     t.style.color       = '';
-    t.className = `fixed bottom-6 left-1/2 -translate-x-1/2 bg-[#111118] border border-[#2a2a3a] px-5 py-2 rounded-full font-mono text-xs tracking-wide z-[700] whitespace-nowrap shadow-2xl transition-all duration-300 opacity-100 translate-y-0`;
     if(type === 'ok')  { t.style.borderColor = '#10b981'; t.style.color = '#10b981'; }
     if(type === 'acc') { t.style.borderColor = '#a855f7'; t.style.color = '#a855f7'; }
+    t.style.display = 'block';
+    t.classList.remove('toast-out');
+    void t.offsetWidth;
+    t.classList.add('toast-in');
     clearTimeout(_tt);
-    _tt = setTimeout(() => { t.style.opacity = '0'; }, 2400);
+    _tt = setTimeout(() => {
+        t.classList.remove('toast-in');
+        void t.offsetWidth;
+        t.classList.add('toast-out');
+        t.addEventListener('animationend', () => {
+            t.classList.remove('toast-out');
+            t.style.display = 'none';
+        }, { once: true });
+    }, 2400);
 }
 
 document.addEventListener('keydown', e => {
